@@ -1,2 +1,2 @@
-# Computer-Graphics-Project
-Computer Graphics Project
+# Ocean
+npm run dev
