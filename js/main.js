@@ -1,5 +1,5 @@
 let camera, scene, renderer;
-let controls, water, sun;
+let controls, water, sky, sun;
 
   init();
   animate();
@@ -17,7 +17,8 @@ function init() {
   // CAMERA
   // Create a camera so we can view the scene
   camera = new THREE.PerspectiveCamera( 55, window.innerWidth / window.innerHeight, 1, 20000 );
-  camera.position.set( 30, 30, 100 );
+  //camera.position.set( 30, 30, 100 );
+  camera.position.set( 0, 250, 1750 );
 
   // LIGHTS
   // Add initial ambient light to set the tone for the scene.
@@ -41,7 +42,6 @@ function init() {
   sunlight.shadow.camera.far = 2800;
   //scene.add( sunlight );
 
-  buildObjects();
 
   // RENDERER
   // Create the Three.js renderer and attach it to our canvas
@@ -51,80 +51,7 @@ function init() {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   document.body.appendChild( renderer.domElement );
 
-  //SUN
-
-  sun = new THREE.Vector3();
-
-  // Water
-
-  const waterGeometry = new THREE.PlaneGeometry( 100000, 100000 );
-
-  water = new Water(
-    waterGeometry,
-    {
-      textureWidth: 512,
-      textureHeight: 512,
-      waterNormals: new THREE.TextureLoader().load( 'assets/waternormals.jpg', function ( texture ) {
-
-        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-
-      } ),
-      sunDirection: new THREE.Vector3(),
-      sunColor: 0xffffff,
-      waterColor: 0x001e0f,
-      distortionScale: 3.7,
-      fog: scene.fog !== undefined
-    }
-  );
-
-  water.rotation.x = - Math.PI / 2;
-
-  scene.add( water );
-
-  // Sky
-
-  const sky = new Sky();
-  sky.scale.setScalar( 100000 );
-  scene.add( sky );
-
-  const skyUniforms = sky.material.uniforms;
-
-  skyUniforms[ 'turbidity' ].value = 10;
-  skyUniforms[ 'rayleigh' ].value = 2;
-  skyUniforms[ 'mieCoefficient' ].value = 0.005;
-  skyUniforms[ 'mieDirectionalG' ].value = 0.8;
-
-  const parameters = {
-    elevation: 2,
-    azimuth: 180
-  };
-
-  const pmremGenerator = new THREE.PMREMGenerator( renderer );
-  let renderTarget;
-
-  function updateSun() {
-
-    const phi = THREE.MathUtils.degToRad( 90 - parameters.elevation );
-    const theta = THREE.MathUtils.degToRad( parameters.azimuth );
-
-    sun.setFromSphericalCoords( 1, phi, theta );
-
-    sky.material.uniforms[ 'sunPosition' ].value.copy( sun );
-    water.material.uniforms[ 'sunDirection' ].value.copy( sun ).normalize();
-
-    if ( renderTarget !== undefined ) renderTarget.dispose();
-
-    renderTarget = pmremGenerator.fromScene( sky );
-
-    scene.environment = renderTarget.texture;
-
-  }
-
-  updateSun();
-
-  const waterUniforms = water.material.uniforms;
-
-  window.addEventListener( 'resize', onWindowResize );
+  buildObjects();
 
   // CONTROLS
   controls = new OrbitControls( camera, renderer.domElement );
@@ -184,9 +111,110 @@ function render() {
 
  // Function to create each object to be used in the scene.
 function buildObjects() {
+  buildSun();
+  buildOcean();
+  buildSky();
   buildGround();
   buildTrees();
+  buildClouds();
+  updateSun();
+
 }
+
+/*
+ * SUN
+ * Functions used to create the ocean. This use texture and is placed to cover the entire XY space.
+ */
+
+function buildSun(){
+  sun = new THREE.Vector3();
+}
+
+/*
+ * OCEAN
+ * Functions used to create the ocean. This use texture and is placed to cover the entire XY space.
+ */
+
+function buildOcean(){
+  
+  const waterGeometry = new THREE.PlaneGeometry( 100000, 100000 );
+
+  water = new Water(
+    waterGeometry,
+    {
+      textureWidth: 512,
+      textureHeight: 512,
+      waterNormals: new THREE.TextureLoader().load( 'assets/waternormals.jpg', function ( texture ) {
+
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+
+      } ),
+      sunDirection: new THREE.Vector3(),
+      sunColor: 0xffffff,
+      waterColor: 0x001e0f,
+      distortionScale: 3.7,
+      fog: scene.fog !== undefined
+    }
+  );
+
+  water.rotation.x = - Math.PI / 2;
+
+  scene.add( water );
+  //const waterUniforms = water.material.uniforms;
+
+  
+}
+
+/*
+ * SKY
+ * Functions used to create the ocean. This use texture and is placed to cover the entire XY space.
+ */
+
+function buildSky(){
+  // Sky
+
+  sky = new Sky();
+  sky.scale.setScalar( 100000 );
+  scene.add( sky );
+
+  const skyUniforms = sky.material.uniforms;
+
+  skyUniforms[ 'turbidity' ].value = 10;
+  skyUniforms[ 'rayleigh' ].value = 2;
+  skyUniforms[ 'mieCoefficient' ].value = 0.005;
+  skyUniforms[ 'mieDirectionalG' ].value = 0.8;
+}
+
+/*
+ * UPDATE SUN
+ * Functions used to update sun lighting.
+ */
+
+function updateSun(){
+
+  const parameters = {
+    elevation: 2,
+    azimuth: 180
+  };
+
+  const pmremGenerator = new THREE.PMREMGenerator( renderer );
+  let renderTarget;
+
+  const phi = THREE.MathUtils.degToRad( 90 - parameters.elevation );
+  const theta = THREE.MathUtils.degToRad( parameters.azimuth );
+
+  sun.setFromSphericalCoords( 1, phi, theta );
+
+  sky.material.uniforms[ 'sunPosition' ].value.copy( sun );
+  water.material.uniforms[ 'sunDirection' ].value.copy( sun ).normalize();
+
+  if ( renderTarget !== undefined ) renderTarget.dispose();
+
+  renderTarget = pmremGenerator.fromScene( sky );
+
+  scene.environment = renderTarget.texture;
+}
+
 
 /*
  * GROUND
@@ -196,11 +224,7 @@ function buildObjects() {
 // Function to build the ground.
 function buildGround() {
   // Repeat the texture to fill everything, and repeat it multiple times to fit better.
-  const texture = new THREE.TextureLoader().load( 'assets/grass.jpg', function ( texture ) {
-
-        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-
-      } );
+  const texture = new THREE.TextureLoader().load( 'assets/grass.jpg');
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   texture.repeat.set( 100, 100 );
   texture.anisotropy = 10;
@@ -213,6 +237,7 @@ function buildGround() {
   ground.rotation.x = - Math.PI / 2;
   ground.receiveShadow = true;
   scene.add( ground );
+  const groundUniforms = ground.material.uniforms;
 }
 
 
@@ -228,7 +253,6 @@ function buildGround() {
 function buildTrees() {
   // Generate a random number to determine the amount of trees.
   const treesToAdd = Math.floor(Math.random() * 50) + 10;
-  // Generate trees to the left of the screen (cat's right side);
   for( let i = 0; i <= treesToAdd; i++) {
     let randomX = -1 * (Math.floor(Math.random() * 500)-500)* randomSign();
     let randomZ = (Math.floor(Math.random() * 500)-500) * randomSign();
@@ -249,10 +273,7 @@ function buildTree(x, z) {
   // Add a bump map to be a little more realistic, not required.
   const material = new THREE.MeshPhongMaterial( { map: texture, bumpMap: texture, bumpScale: 0.8 } );
   let tree = new THREE.Mesh(geometry, material);
-  //tree.castShadow = true;
-  //tree.receiveShadow = true;
   tree.position.set(x, 14, z);
-  //scaleObject(tree, 10);
   let leaves = buildTreeLeaves();
   tree.add(leaves);
   return tree;
@@ -271,8 +292,6 @@ function buildTreeLeaves() {
   const material = new THREE.MeshPhongMaterial( { map: texture, bumpMap: texture, bumpScale: 1 } );
   let leaves = new THREE.Mesh(geometry, material);
   leaves.position.y = 12.67;
-  //leaves.castShadow = true;
-  //leaves.receiveShadow = true;
   const leavesToAdd = Math.floor(Math.random() * 8) + 2;
   for( let i = 0; i <= leavesToAdd; i++) {
     leaves.add(buildTreeLeavesRandom());
@@ -301,8 +320,6 @@ function buildTreeLeavesRandom() {
   leaves.position.y = Math.floor(Math.random() * 260 / 30) * randomSign();
   leaves.position.x = Math.floor(Math.random() * 260 / 30) * randomSign();
   leaves.position.z = Math.floor(Math.random() * 180 / 30) * randomSign();
-  //leaves.castShadow = true;
-  //leaves.receiveShadow = true;
   return leaves;
 }
 
@@ -311,11 +328,75 @@ function randomSign() {
   return -1 + Math.round(Math.random()) * 2;
 }
 
+/*
+ * CLOUDS
+ * Functions used to create clouds. These use texture and are randomly (position and geometry) created .
+ */
+
+
+function buildClouds() {
+  // Generate a random number to determine the amount of clouds.
+  const cloudsToAdd = Math.floor(Math.random() * 20) + 10;
+  for( let i = 0; i <= cloudsToAdd; i++) {
+    let randomX = -1 * (Math.floor(Math.random() * 500)-500)* randomSign();
+    let randomZ = (Math.floor(Math.random() * 500)-500) * randomSign();
+    let newClouds = buildCloud(randomX, randomZ);
+    scene.add(newClouds);
+  }
+}
+
+ // Function to build a cloud.
+ // Using a box geometry as its base.
+function buildCloud(x, z) {
+  let randomX = Math.floor(Math.random() * 50) + 20;
+  let randomY = Math.floor(Math.random() * 11) + 10;
+  let randomZ = Math.floor(Math.random() * 100) + 80;
+  const geometry = new THREE.BoxGeometry(0, 0, 0);
+  //const geometry = new THREE.BoxGeometry(50, 15, 100);
+  const material = new THREE.MeshPhongMaterial( { color: 0xFFFFFF } );
+  let clouds = new THREE.Mesh(geometry, material);
+  clouds.position.set(x, 500, z);
+  let particles = buildCloudParticles();
+  clouds.add(particles);
+  return clouds;
+}
+
+// Function to build a tree's leaves.
+// Using a box geometry as the base on top of the tree log.
+function buildCloudParticles() {
+  const geometry = new THREE.BoxGeometry(100, 10, 100);
+  const material = new THREE.MeshPhongMaterial( { color: 0xFFFFFF } );  let leaves = new THREE.Mesh(geometry, material);
+  leaves.position.y = 10;
+  const leavesToAdd = Math.floor(Math.random() * 8) + 2;
+  for( let i = 0; i <= leavesToAdd; i++) {
+    leaves.add(buildCloudsRandom());
+  }
+  return leaves;
+}
+
+// Function to build a tree's leaves randomly.
+// Using a box geometry that's between some ranges depending on the component.
+// This way each tree is unique in a way.
+function buildCloudsRandom() {
+  let randomX = Math.floor(Math.random() * 300) + 150;
+  let randomZ = Math.floor(Math.random() * 400) + 200;
+  const geometry = new THREE.BoxGeometry(randomX / 30, 10, randomZ / 30);
+  const material = new THREE.MeshPhongMaterial( { color: 0xFFFFFF } );
+  let leaves = new THREE.Mesh(geometry, material);
+  leaves.position.y = Math.floor(Math.random() * 15);
+  leaves.position.x = Math.floor(Math.random() * 260 / 30) * randomSign();
+  leaves.position.z = Math.floor(Math.random() * 180 / 30) * randomSign();
+  return leaves;
+}
+
+
 
 /*
  * LISTENERS
  * Functions used for listeners to generate some kind of output or interaction.
  */
+
+window.addEventListener( 'resize', onWindowResize );
 
 // Function to detect if the window was resized to reset
 // sizes depending on the new window.
@@ -325,6 +406,7 @@ function onWindowResize() {
 
   renderer.setSize( window.innerWidth, window.innerHeight );
 }
+
 
 
 
