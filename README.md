@@ -11,7 +11,7 @@ https://miketanori.github.io/Computer-Graphics-Project/
 ## About the project
 This project is inspired by a scene of the famous videogame Minecraft for my computer graphics course.
 
-The objective is to create a scene where there is a 3D model of a boat (using primitive forms) and, grass, and tress (all with textures). This will serve as a little island floating above the ocean. Then it will have light and shadows to fulfill the project requirements. The user can move the camera by pressing the mouse and dragging the image.
+The objective is to create a scene where there is a 3D model of a boat (using primitive forms), grass, clouds, and tress (all with textures except for clouds). This will serve as a little island floating above the ocean with clouds on top. Then it will have light and shadows to fulfill the project requirements. The user can move the camera by pressing the mouse and dragging the image.
 
 
 Also, it lets the user move the camera by pressing the follwing keys: 
