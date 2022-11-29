@@ -25,9 +25,12 @@ function init() {
   ambientLight.intensity = 0.75;
   scene.add( ambientLight );
 
-  const sunlight = new THREE.DirectionalLight( 0xff0000, 1 );
-  sunlight.position.set( 220, 250, -300 );
-  sunlight.intensity = 2.5;
+  const sunlight = new THREE.DirectionalLight( 0xFF9900, 1 );
+  
+
+  sunlight.position.set( 0, 250, -1000 );
+
+  sunlight.intensity = 2.5; //2.5;
   sunlight.castShadow = true;
   // Quick way to put light further apart.
   sunlight.position.multiplyScalar( 2.3 );
@@ -38,7 +41,7 @@ function init() {
   sunlight.shadow.camera.top = 800;
   sunlight.shadow.camera.bottom = - 500;
   sunlight.shadow.camera.far = 2800;
-  //scene.add( sunlight );
+  scene.add( sunlight );
 
 
   // RENDERER
@@ -46,6 +49,7 @@ function init() {
   renderer = new THREE.WebGLRenderer( { antialias: true } );
   renderer.setPixelRatio( window.devicePixelRatio );
   renderer.setSize( window.innerWidth, window.innerHeight );
+  renderer.shadowMap.enabled = true;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   document.body.appendChild( renderer.domElement );
 
@@ -135,7 +139,7 @@ function animate() {
 // Function to render the scene
 function render() {
 
-  water.material.uniforms[ 'time' ].value += 0.30/60 ;
+  water.material.uniforms[ 'time' ].value += 0.1/60 ;
   // Render the scene.
   renderer.render( scene, camera );
 
@@ -210,22 +214,7 @@ function buildBoat() {
   shipGroup.position.set(0,10,600);
   shipGroup.scale.set(20,20,20);
   scene.add(shipGroup);
-/*
-  var start = { x: shipGroup.position.x, y: shipGroup.position.y, z: shipGroup.position.z };
-  var target1 = { x: shipGroup.position.x, y: shipGroup.position.y-0.5, z: shipGroup.position.z};
-  var target2 = { x: shipGroup.position.x, y: shipGroup.position.y, z: shipGroup.position.z };
-  var tween1 = new TWEEN.Tween(start).to(target1, 5000).easing(TWEEN.Easing.Elastic.InOut)
-  var tween2 = new TWEEN.Tween(start).to(target2, 5000).easing(TWEEN.Easing.Elastic.InOut).chain(tween1)
-  tween1.chain(tween2)
-  tween1.start()
-  const update = function () {
-    shipGroup.position.x = start.x;
-    shipGroup.position.y = start.y;
-    shipGroup.position.z = start.z;
-  }
-  tween1.onUpdate(update)
-  tween2.onUpdate(update);
-*/
+
 }
 
 // box
@@ -241,7 +230,7 @@ function buildBox() {
   let box = new THREE.Mesh(geometry, material);
   box.position.set(490, 0, 490)
   box.castShadow = true;
-  box.receiveShadow = true;
+  //box.receiveShadow = true;
   box.material.transparent = true;
   scene.add(box)
 
@@ -308,7 +297,7 @@ function buildOcean(){
 
 /*
  * SKY
- * Functions used to create the ocean. This use texture and is placed to cover the entire XY space.
+ * Functions used to create the sky. This use texture and is placed to cover the entire XY space.
  */
 
 function buildSky(){
@@ -368,7 +357,7 @@ function buildGround() {
   const texture = new THREE.TextureLoader().load( 'assets/grass.jpg');
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   texture.repeat.set( 100, 100 );
-  texture.anisotropy = 10;
+  texture.anisotropy = 1000;
   const material = new THREE.MeshLambertMaterial( { map: texture } );
   let ground = new THREE.Mesh( new THREE.PlaneGeometry( 1000, 1000 ), material );
   ground.position.y = 1;
@@ -378,7 +367,6 @@ function buildGround() {
   ground.rotation.x = - Math.PI / 2;
   ground.receiveShadow = true;
   scene.add( ground );
-  const groundUniforms = ground.material.uniforms;
 }
 
 
@@ -398,6 +386,8 @@ function buildTrees() {
     let randomX = -1 * (Math.floor(Math.random() * 500)-400)* randomSign();
     let randomZ = (Math.floor(Math.random() * 500)-400) * randomSign();
     let newTree = buildTree(randomX, randomZ);
+    newTree.castShadow = true;
+    newTree.receiveShadow = true;
     scene.add(newTree);
   }
 }
@@ -416,6 +406,8 @@ function buildTree(x, z) {
   let tree = new THREE.Mesh(geometry, material);
   tree.position.set(x, 14, z);
   let leaves = buildTreeLeaves();
+  tree.castShadow = true;
+  tree.receiveShadow = true;  
   tree.add(leaves);
   return tree;
 }
@@ -434,6 +426,8 @@ function buildTreeLeaves() {
   let leaves = new THREE.Mesh(geometry, material);
   leaves.position.y = 12.67;
   const leavesToAdd = Math.floor(Math.random() * 8) + 2;
+  leaves.castShadow = true;
+  leaves.receiveShadow = true; 
   for( let i = 0; i <= leavesToAdd; i++) {
     leaves.add(buildTreeLeavesRandom());
   }
@@ -461,6 +455,8 @@ function buildTreeLeavesRandom() {
   leaves.position.y = Math.floor(Math.random() * 260 / 30) * randomSign();
   leaves.position.x = Math.floor(Math.random() * 260 / 30) * randomSign();
   leaves.position.z = Math.floor(Math.random() * 180 / 30) * randomSign();
+  leaves.castShadow = true;
+  leaves.receiveShadow = true; 
   return leaves;
 }
 
@@ -497,6 +493,8 @@ function buildCloud(x, z) {
   clouds.position.set(x, randomY, z);
   let particles = buildCloudParticles();
   clouds.add(particles);
+  clouds.castShadow = true;
+  clouds.receiveShadow = true;  
   return clouds;
 }
 
